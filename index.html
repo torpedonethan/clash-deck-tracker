@@ -20,94 +20,92 @@
   <p id="loadingMsg">📊 Loading match data from Google Sheets...</p>
   <canvas id="winrateChart" width="800" height="400"></canvas>
 
-<script>
-  const sheetCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpyqq4G-Qws8883zcFhP8wgBkeGaKCS-JAoVLGDBuezKMoDCrs5Lp5gnnuo70osVrIxF4HVl2n-jFb/pub?output=csv';
+  <script>
+    const sheetCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpyqq4G-Qws8883zcFhP8wgBkeGaKCS-JAoVLGDBuezKMoDCrs5Lp5gnnuo70osVrIxF4HVl2n-jFb/pub?output=csv';
 
-  Papa.parse(sheetCSV, {
-    download: true,
-    header: true,
-    complete: function(results) {
-      const data = results.data;
-      console.log("CSV data loaded:", data);
+    Papa.parse(sheetCSV, {
+      download: true,
+      header: true,
+      complete: function(results) {
+        const data = results.data;
+        console.log("CSV data loaded:", data);
 
-      const deckGroups = {};
-      data.forEach(match => {
-        const deck = match.deck_hash;
-        const ts = new Date(match.timestamp.replace(/^(\d{4})(\d{2})(\d{2})T/, '$1-$2-$3T'));
+        const deckGroups = {};
+        data.forEach(match => {
+          const deck = match.deck_hash;
+          const raw = match.timestamp;
+          const result = match.result?.toLowerCase();
 
-        const win = match.result?.toLowerCase() === 'win' ? 1 : 0;
-        if (!deck || isNaN(ts)) return;
-        if (!deckGroups[deck]) deckGroups[deck] = [];
-        deckGroups[deck].push({ ts, win });
-      });
+          if (!deck || !raw || !result || (result !== 'win' && result !== 'loss')) return;
 
-      if (Object.keys(deckGroups).length === 0) {
-        document.getElementById("loadingMsg").innerText = "⚠️ No valid match data found.";
-        return;
-      }
+          // Parse timestamp format '20240422T220228.000Z' into a JS Date
+          const tsFixed = raw.replace(/^(\d{4})(\d{2})(\d{2})T/, '$1-$2-$3T');
+          const ts = new Date(tsFixed);
+          if (isNaN(ts)) return;
 
-      const chartData = {
-        labels: [],
-        datasets: []
-      };
-
-      Object.keys(deckGroups).forEach((deck, i) => {
-        const matches = deckGroups[deck].sort((a, b) => a.ts - b.ts);
-        let wins = 0;
-        const points = matches.map((m, idx) => {
-          wins += m.win;
-          return ((wins / (idx + 1)) * 100).toFixed(2); // Convert to percentage
+          const win = result === 'win' ? 1 : 0;
+          if (!deckGroups[deck]) deckGroups[deck] = [];
+          deckGroups[deck].push({ ts, win });
         });
 
-        chartData.datasets.push({
-          label: `Deck ${deck.slice(0, 6)}`,
-          data: points,
-          fill: false,
-          borderColor: `hsl(${i * 60 % 360}, 70%, 50%)`,
-          tension: 0.3
-        });
-
-        // Custom short format: MM/DD/YY
-        if (chartData.labels.length < matches.length) {
-          chartData.labels = matches.map(m =>
-            `${m.ts.getMonth() + 1}/${m.ts.getDate()}/${String(m.ts.getFullYear()).slice(2)}`
-          );
+        if (Object.keys(deckGroups).length === 0) {
+          document.getElementById("loadingMsg").innerText = "⚠️ No valid match data found.";
+          return;
         }
-      });
 
-      const ctx = document.getElementById('winrateChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: chartData,
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: true },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return `${context.dataset.label}: ${context.formattedValue}%`;
-                }
+        const chartData = {
+          labels: [],
+          datasets: []
+        };
+
+        Object.keys(deckGroups).forEach((deck, i) => {
+          const matches = deckGroups[deck].sort((a, b) => a.ts - b.ts);
+          let wins = 0;
+          const points = matches.map((m, idx) => {
+            wins += m.win;
+            return (wins / (idx + 1) * 100).toFixed(1); // % format
+          });
+
+          chartData.datasets.push({
+            label: `Deck ${deck.slice(0, 6)}`,
+            data: points,
+            fill: false,
+            borderColor: `hsl(${i * 60 % 360}, 70%, 50%)`,
+            tension: 0.3
+          });
+
+          if (chartData.labels.length < matches.length) {
+            chartData.labels = matches.map(m =>
+              m.ts.toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })
+            );
+          }
+        });
+
+        const ctx = document.getElementById('winrateChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: chartData,
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: true }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                title: { display: true, text: 'Win Rate (%)' }
+              },
+              x: {
+                title: { display: true, text: 'Date' }
               }
             }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 100,
-              title: { display: true, text: 'Win Rate (%)' }
-            },
-            x: {
-              title: { display: true, text: 'Date' }
-            }
           }
-        }
-      });
+        });
 
-      document.getElementById("loadingMsg").style.display = "none";
-    }
-  });
-</script>
-
+        document.getElementById("loadingMsg").style.display = "none";
+      }
+    });
+  </script>
 </body>
 </html>
