@@ -21,6 +21,21 @@
   <canvas id="winrateChart" width="800" height="400"></canvas>
 
   <script>
+    const CARD_MAP = {
+      "0": "Knight", "1": "Archers", "2": "Goblins", "3": "Giant", "4": "P.E.K.K.A",
+      "5": "Minions", "6": "Balloon", "7": "Witch", "8": "Barbarians", "9": "Golem",
+      "10": "Skeletons", "11": "Valkyrie", "12": "Skeleton Army", "13": "Bomber", "14": "Musketeer",
+      "15": "Baby Dragon", "16": "Prince", "17": "Wizard", "18": "Mini P.E.K.K.A", "19": "Spear Goblins",
+      "20": "Giant Skeleton", "21": "Hog Rider", "22": "Minion Horde", "23": "Ice Wizard", "24": "Royal Giant",
+      "25": "Guards", "26": "Princess", "27": "Dark Prince", "28": "Three Musketeers", "29": "Lava Hound",
+      "30": "Ice Spirit", "31": "Fire Spirits", "32": "Miner", "33": "Sparky", "34": "Bowler",
+      "35": "Lumberjack", "36": "Battle Ram", "37": "Inferno Dragon", "38": "Ice Golem", "39": "Mega Minion",
+      "40": "Dart Goblin", "41": "Goblin Gang", "42": "Electro Wizard", "43": "Elite Barbarians", "44": "Hunter",
+      "45": "Executioner", "46": "Bandit", "47": "Royal Recruits", "48": "Night Witch", "49": "Bats",
+      "50": "Royal Ghost", "51": "Ram Rider", "52": "Zappies", "53": "Rascals", "54": "Cannon Cart",
+      "55": "Mega Knight", "56": "Skeleton Barrel", "57": "Fisherman", "58": "Magic Archer", "59": "Electro Dragon"
+    };
+
     const sheetCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpyqq4G-Qws8883zcFhP8wgBkeGaKCS-JAoVLGDBuezKMoDCrs5Lp5gnnuo70osVrIxF4HVl2n-jFb/pub?output=csv';
 
     Papa.parse(sheetCSV, {
@@ -28,26 +43,35 @@
       header: true,
       complete: function(results) {
         const data = results.data;
-        console.log("CSV data loaded:", data);
-
         const deckGroups = {};
+
         data.forEach(match => {
-          const deck = match.deck_hash;
-          const timestampStr = match.timestamp;
+          const encoded = match.deck_hash;
+          const raw = match.timestamp;
+          const result = match.result?.toLowerCase();
 
-          // Parse ISO-like timestamp format (e.g. 20250420T220228.000Z)
+          if (!encoded || !raw || !result || (result !== 'win' && result !== 'loss')) return;
+
           const ts = new Date(
-            timestampStr.replace(
-              /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
-              '$1-$2-$3T$4:$5:$6'
-            )
+            raw.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/, '$1-$2-$3T$4:$5:$6')
           );
+          if (isNaN(ts)) return;
 
-          const win = match.result?.toLowerCase() === 'win' ? 1 : 0;
-          if (!deck || isNaN(ts)) return;
+          let decodedIDs = [];
+          try {
+            const decoded = atob(encoded);
+            decodedIDs = decoded.split(',');
+          } catch (e) {
+            console.warn("Failed to decode:", encoded);
+          }
 
-          if (!deckGroups[deck]) deckGroups[deck] = [];
-          deckGroups[deck].push({ ts, win });
+          const cardNames = decodedIDs.map(id => CARD_MAP[id] || `Card${id}`);
+          const deckName =
+            cardNames.slice(0, 4).join(', ') + '\n' + cardNames.slice(4).join(', ');
+          const win = result === 'win' ? 1 : 0;
+
+          if (!deckGroups[deckName]) deckGroups[deckName] = [];
+          deckGroups[deckName].push({ ts, win });
         });
 
         if (Object.keys(deckGroups).length === 0) {
@@ -60,16 +84,16 @@
           datasets: []
         };
 
-        Object.keys(deckGroups).forEach((deck, i) => {
-          const matches = deckGroups[deck].sort((a, b) => a.ts - b.ts);
+        Object.keys(deckGroups).forEach((deckName, i) => {
+          const matches = deckGroups[deckName].sort((a, b) => a.ts - b.ts);
           let wins = 0;
           const points = matches.map((m, idx) => {
             wins += m.win;
-            return ((wins / (idx + 1)) * 100).toFixed(2); // percent
+            return ((wins / (idx + 1)) * 100).toFixed(2);
           });
 
           chartData.datasets.push({
-            label: `Deck ${deck.slice(0, 6)}`,
+            label: deckName,
             data: points,
             fill: false,
             borderColor: `hsl(${i * 60 % 360}, 70%, 50%)`,
@@ -91,7 +115,14 @@
           options: {
             responsive: true,
             plugins: {
-              legend: { display: true }
+              legend: { display: true },
+              tooltip: {
+                callbacks: {
+                  title: (items) => chartData.labels[items[0].dataIndex],
+                  label: (context) => context.dataset.label,
+                  afterLabel: (context) => `Winrate: ${context.formattedValue}%`
+                }
+              }
             },
             scales: {
               y: {
