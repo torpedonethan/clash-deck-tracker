@@ -1,88 +1,71 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Clash Royale Winrate Tracker</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/tabletop@1.6.0/tabletop.js"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin: 40px;
-    }
-    canvas {
-      max-width: 100%;
-    }
-  </style>
-</head>
-<body>
-  <h2>Clash Royale Deck Winrate Over Time</h2>
-  <canvas id="winrateChart" width="800" height="400"></canvas>
+<script>
+  const sheetURL = '1Np5jgVKGQXRsmFPgWKyNMzRIWNjzEehVamEdU55Y2VM';
 
-  <script>
-    const sheetURL = 'https://docs.google.com/spreadsheets/d/1Np5jgVKGQXRsmFPgWKyNMzRIWNjzEehVamEdU55Y2VM/pubhtml';
+  Tabletop.init({
+    key: sheetURL,
+    callback: function(data) {
+      const deckGroups = {};
+      data.forEach(match => {
+        const deck = match.deck_hash;
+        const ts = new Date(match.timestamp);
+        const win = match.result.toLowerCase() === 'win' ? 1 : 0;
+        if (!deckGroups[deck]) deckGroups[deck] = [];
+        deckGroups[deck].push({ ts, win });
+      });
 
-    Tabletop.init({
-      key: sheetURL,
-      callback: function(data) {
-        const deckGroups = {};
-        data.forEach(match => {
-          const deck = match.deck_hash;
-          const ts = new Date(match.timestamp);
-          const win = match.result.toLowerCase() === 'win' ? 1 : 0;
-          if (!deckGroups[deck]) deckGroups[deck] = [];
-          deckGroups[deck].push({ ts, win });
+      const chartData = {
+        labels: [],
+        datasets: []
+      };
+
+      Object.keys(deckGroups).forEach((deck, i) => {
+        const matches = deckGroups[deck].sort((a, b) => a.ts - b.ts);
+        let wins = 0;
+        const points = matches.map((m, idx) => {
+          wins += m.win;
+          return (wins / (idx + 1)).toFixed(2);
         });
 
-        const chartData = {
-          labels: [],
-          datasets: []
-        };
-
-        Object.keys(deckGroups).forEach((deck, i) => {
-          const matches = deckGroups[deck].sort((a, b) => a.ts - b.ts);
-          let wins = 0;
-          const points = matches.map((m, idx) => {
-            wins += m.win;
-            return (wins / (idx + 1)).toFixed(2);
-          });
-
-          const label = `Deck ${deck.slice(0, 6)}`;
-          chartData.datasets.push({
-            label: label,
-            data: points,
-            fill: false,
-            borderColor: `hsl(${i * 60 % 360}, 70%, 50%)`,
-            tension: 0.3
-          });
-
-          if (chartData.labels.length < matches.length) {
-            chartData.labels = matches.map(m => m.ts.toLocaleString());
-          }
+        const label = `Deck ${deck.slice(0, 6)}`;
+        chartData.datasets.push({
+          label: label,
+          data: points,
+          fill: false,
+          borderColor: `hsl(${i * 60 % 360}, 70%, 50%)`,
+          tension: 0.3
         });
 
-        const ctx = document.getElementById('winrateChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'line',
-          data: chartData,
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { display: true }
+        if (chartData.labels.length < matches.length) {
+          chartData.labels = matches.map(m => m.ts.toLocaleString());
+        }
+      });
+
+      const ctx = document.getElementById('winrateChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 1,
+              title: { display: true, text: 'Win Rate' }
             },
-            scales: {
-              y: {
-                beginAtZero: true,
-                max: 1,
-                title: { display: true, text: 'Win Rate' }
-              },
-              x: {
-                title: { display: true, text: 'Time (by match)' }
-              }
+            x: {
+              title: { display: true, text: 'Time (by match)' }
             }
           }
-        });
-      },
+        }
+      });
+    },
+    simpleSheet: true
+  });
+</script>
+
       simpleSheet: true
     });
   </script>
