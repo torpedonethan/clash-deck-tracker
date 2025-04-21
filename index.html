@@ -1,70 +1,104 @@
-<script>
-  const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpyqq4G-Qws8883zcFhP8wgBkeGaKCS-JAoVLGDBuezKMoDCrs5Lp5gnnuo70osVrIxF4HVl2n-jFb/pubhtml';
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Clash Royale Winrate Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/tabletop@1.6.0/tabletop.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 40px;
+    }
+    canvas {
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h2>Clash Royale Deck Winrate Over Time</h2>
+  <p id="loadingMsg">📊 Loading match data from Google Sheets...</p>
+  <canvas id="winrateChart" width="800" height="400"></canvas>
 
-  Tabletop.init({
-    key: sheetURL,
-    callback: function(data) {
-      const deckGroups = {};
-      data.forEach(match => {
-        const deck = match.deck_hash;
-        const ts = new Date(match.timestamp);
-        const win = match.result.toLowerCase() === 'win' ? 1 : 0;
-        if (!deckGroups[deck]) deckGroups[deck] = [];
-        deckGroups[deck].push({ ts, win });
-      });
+  <script>
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/1Np5jgVKGQXRsmFPgWKyNMzRIWNjzEehVamEdU55Y2VM/pubhtml';
 
-      const chartData = {
-        labels: [],
-        datasets: []
-      };
+    Tabletop.init({
+      key: sheetURL,
+      callback: function(data) {
+        console.log("Sheet data loaded:", data); // Debug log
 
-      Object.keys(deckGroups).forEach((deck, i) => {
-        const matches = deckGroups[deck].sort((a, b) => a.ts - b.ts);
-        let wins = 0;
-        const points = matches.map((m, idx) => {
-          wins += m.win;
-          return (wins / (idx + 1)).toFixed(2);
+        const deckGroups = {};
+        data.forEach(match => {
+          const deck = match.deck_hash;
+          const ts = new Date(match.timestamp);
+          const win = match.result.toLowerCase() === 'win' ? 1 : 0;
+          if (!deck || isNaN(ts)) return; // Skip bad data
+          if (!deckGroups[deck]) deckGroups[deck] = [];
+          deckGroups[deck].push({ ts, win });
         });
 
-        const label = `Deck ${deck.slice(0, 6)}`;
-        chartData.datasets.push({
-          label: label,
-          data: points,
-          fill: false,
-          borderColor: `hsl(${i * 60 % 360}, 70%, 50%)`,
-          tension: 0.3
-        });
-
-        if (chartData.labels.length < matches.length) {
-          chartData.labels = matches.map(m => m.ts.toLocaleString());
+        if (Object.keys(deckGroups).length === 0) {
+          document.getElementById("loadingMsg").innerText = "⚠️ No valid match data found.";
+          return;
         }
-      });
 
-      const ctx = document.getElementById('winrateChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: chartData,
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: true }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 1,
-              title: { display: true, text: 'Win Rate' }
+        const chartData = {
+          labels: [],
+          datasets: []
+        };
+
+        Object.keys(deckGroups).forEach((deck, i) => {
+          const matches = deckGroups[deck].sort((a, b) => a.ts - b.ts);
+          let wins = 0;
+          const points = matches.map((m, idx) => {
+            wins += m.win;
+            return (wins / (idx + 1)).toFixed(2);
+          });
+
+          chartData.datasets.push({
+            label: `Deck ${deck.slice(0, 6)}`,
+            data: points,
+            fill: false,
+            borderColor: `hsl(${i * 60 % 360}, 70%, 50%)`,
+            tension: 0.3
+          });
+
+          if (chartData.labels.length < matches.length) {
+            chartData.labels = matches.map(m => m.ts.toLocaleString());
+          }
+        });
+
+        const ctx = document.getElementById('winrateChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: chartData,
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: true }
             },
-            x: {
-              title: { display: true, text: 'Time (by match)' }
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 1,
+                title: { display: true, text: 'Win Rate' }
+              },
+              x: {
+                title: { display: true, text: 'Time (by match)' }
+              }
             }
           }
-        }
-      });
-    },
-    simpleSheet: true
-  });
-</script>
+        });
+
+        document.getElementById("loadingMsg").style.display = "none"; // Hide message
+      },
+      simpleSheet: true
+    });
+  </script>
+</body>
+</html>
+
 
       simpleSheet: true
     });
