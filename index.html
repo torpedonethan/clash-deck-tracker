@@ -33,17 +33,19 @@
         const deckGroups = {};
         data.forEach(match => {
           const deck = match.deck_hash;
-          const raw = match.timestamp;
-          const result = match.result?.toLowerCase();
+          const timestampStr = match.timestamp;
 
-          if (!deck || !raw || !result || (result !== 'win' && result !== 'loss')) return;
+          // Parse ISO-like timestamp format (e.g. 20250420T220228.000Z)
+          const ts = new Date(
+            timestampStr.replace(
+              /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
+              '$1-$2-$3T$4:$5:$6'
+            )
+          );
 
-          // Parse timestamp format '20240422T220228.000Z' into a JS Date
-          const tsFixed = raw.replace(/^(\d{4})(\d{2})(\d{2})T/, '$1-$2-$3T');
-          const ts = new Date(tsFixed);
-          if (isNaN(ts)) return;
+          const win = match.result?.toLowerCase() === 'win' ? 1 : 0;
+          if (!deck || isNaN(ts)) return;
 
-          const win = result === 'win' ? 1 : 0;
           if (!deckGroups[deck]) deckGroups[deck] = [];
           deckGroups[deck].push({ ts, win });
         });
@@ -63,7 +65,7 @@
           let wins = 0;
           const points = matches.map((m, idx) => {
             wins += m.win;
-            return (wins / (idx + 1) * 100).toFixed(1); // % format
+            return ((wins / (idx + 1)) * 100).toFixed(2); // percent
           });
 
           chartData.datasets.push({
@@ -75,9 +77,10 @@
           });
 
           if (chartData.labels.length < matches.length) {
-            chartData.labels = matches.map(m =>
-              m.ts.toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })
-            );
+            chartData.labels = matches.map(m => {
+              const d = new Date(m.ts);
+              return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(-2)}`;
+            });
           }
         });
 
