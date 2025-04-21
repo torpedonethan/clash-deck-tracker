@@ -13,98 +13,48 @@
     canvas {
       max-width: 100%;
     }
+    #legend-wrapper {
+      display: flex;
+      justify-content: center;
+    }
+    #legend-box {
+      text-align: left;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
   <h2>Clash Royale Deck Winrate Over Time</h2>
+  <div id="legend-wrapper">
+    <div id="legend-box"></div>
+  </div>
   <p id="loadingMsg">📊 Loading match data from Google Sheets...</p>
   <canvas id="winrateChart" width="800" height="400"></canvas>
 
   <script>
     const CARD_MAP = {
-  "26000000": "Knight",
-  "26000001": "Archers",
-  "26000002": "Goblins",
-  "26000003": "Giant",
-  "26000004": "PEKKA",
-  "26000005": "Minions",
-  "26000006": "Balloon",
-  "26000007": "Witch",
-  "26000008": "Barbarians",
-  "26000009": "Golem",
-  "26000010": "Skeletons",
-  "26000011": "Valkyrie",
-  "26000012": "Skeleton Army",
-  "26000013": "Bomber",
-  "26000014": "Musketeer",
-  "26000015": "Baby Dragon",
-  "26000016": "Prince",
-  "26000017": "Wizard",
-  "26000018": "Mini P.E.K.K.A",
-  "26000019": "Spear Goblins",
-  "26000020": "Giant Skeleton",
-  "26000021": "Hog Rider",
-  "26000022": "Minion Horde",
-  "26000023": "Ice Wizard",
-  "26000024": "Royal Giant",
-  "26000025": "Guards",
-  "26000026": "Princess",
-  "26000027": "Dark Prince",
-  "26000028": "Three Musketeers",
-  "26000029": "Lava Hound",
-  "26000030": "Ice Spirit",
-  "26000031": "Fire Spirits",
-  "26000032": "Miner",
-  "26000033": "Sparky",
-  "26000034": "Bowler",
-  "26000035": "Lumberjack",
-  "26000036": "Battle Ram",
-  "26000037": "Inferno Dragon",
-  "26000038": "Ice Golem",
-  "26000039": "Mega Minion",
-  "26000040": "Dart Goblin",
-  "26000041": "Goblin Gang",
-  "26000042": "Electro Wizard",
-  "26000043": "Elite Barbarians",
-  "26000044": "Hunter",
-  "26000045": "Executioner",
-  "26000046": "Bandit",
-  "26000047": "Royal Recruits",
-  "26000048": "Night Witch",
-  "26000049": "Bats",
-  "26000050": "Royal Ghost",
-  "26000051": "Ram Rider",
-  "26000052": "Zappies",
-  "26000053": "Rascals",
-  "26000054": "Cannon Cart",
-  "26000055": "Mega Knight",
-  "26000056": "Skeleton Barrel",
-  "26000057": "Fisherman",
-  "26000058": "Magic Archer",
-  "26000059": "Electro Dragon",
-  "27000000": "Fireball",
-  "27000001": "Arrows",
-  "27000002": "Rage",
-  "27000003": "Rocket",
-  "27000004": "Goblin Barrel",
-  "27000005": "Freeze",
-  "27000006": "Mirror",
-  "27000007": "Lightning",
-  "27000008": "Zap",
-  "27000009": "Poison",
-  "27000010": "Graveyard",
-  "27000011": "The Log",
-  "27000012": "Tornado",
-  "28000000": "Cannon",
-  "28000001": "Goblin Hut",
-  "28000002": "Mortar",
-  "28000003": "Inferno Tower",
-  "28000004": "Bomb Tower",
-  "28000005": "Barbarian Hut",
-  "28000006": "Tesla",
-  "28000007": "Elixir Collector",
-  "28000008": "X-Bow"
-};
+      "26000000": "Knight", "26000001": "Archers", "26000002": "Goblins", "26000003": "Giant", "26000004": "PEKKA",
+      "26000005": "Minions", "26000006": "Balloon", "26000007": "Witch", "26000008": "Barbarians", "26000009": "Golem",
+      "26000010": "Skeletons", "26000011": "Valkyrie", "26000012": "Skeleton Army", "26000013": "Bomber", "26000014": "Musketeer",
+      "26000015": "Baby Dragon", "26000016": "Prince", "26000017": "Wizard", "26000018": "Mini P.E.K.K.A", "26000019": "Spear Goblins",
+      "26000020": "Giant Skeleton", "26000021": "Hog Rider", "26000022": "Minion Horde", "26000023": "Ice Wizard", "26000024": "Royal Giant",
+      "26000025": "Guards", "26000026": "Princess", "26000027": "Dark Prince", "26000028": "Three Musketeers", "26000029": "Lava Hound",
+      "26000030": "Ice Spirit", "26000031": "Fire Spirits", "26000032": "Miner", "26000033": "Sparky", "26000034": "Bowler",
+      "26000035": "Lumberjack", "26000036": "Battle Ram", "26000037": "Inferno Dragon", "26000038": "Ice Golem", "26000039": "Mega Minion",
+      "26000040": "Dart Goblin", "26000041": "Goblin Gang", "26000042": "Electro Wizard", "26000043": "Elite Barbarians", "26000044": "Hunter",
+      "26000045": "Executioner", "26000046": "Bandit", "26000047": "Royal Recruits", "26000048": "Night Witch", "26000049": "Bats",
+      "26000050": "Royal Ghost", "26000051": "Ram Rider", "26000052": "Zappies", "26000053": "Rascals", "26000054": "Cannon Cart",
+      "26000055": "Mega Knight", "26000056": "Skeleton Barrel", "26000057": "Fisherman", "26000058": "Magic Archer", "26000059": "Electro Dragon",
+      "26000060": "Firecracker", "26000061": "Mother Witch", "26000062": "Skeleton King", "26000063": "Archer Queen", "26000064": "Golden Knight",
+      "26000065": "Mighty Miner", "26000066": "Monk",
+      "27000000": "Fireball", "27000001": "Arrows", "27000002": "Rage", "27000003": "Rocket", "27000004": "Goblin Barrel", "27000005": "Freeze",
+      "27000006": "Mirror", "27000007": "Lightning", "27000008": "Zap", "27000009": "Poison", "27000010": "Graveyard", "27000011": "The Log",
+      "27000012": "Tornado", "27000013": "Clone", "27000014": "Earthquake", "27000015": "Giant Snowball", "27000016": "Barbarian Barrel",
+      "27000017": "Heal Spirit", "27000018": "Royal Delivery", "27000019": "Phoenix",
+      "28000000": "Cannon", "28000001": "Goblin Hut", "28000002": "Mortar", "28000003": "Inferno Tower", "28000004": "Bomb Tower",
+      "28000005": "Barbarian Hut", "28000006": "Tesla", "28000007": "Elixir Collector", "28000008": "X-Bow", "28000009": "Tombstone",
+      "28000010": "Furnace", "28000011": "Goblin Cage"
+    };
 
     const sheetCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpyqq4G-Qws8883zcFhP8wgBkeGaKCS-JAoVLGDBuezKMoDCrs5Lp5gnnuo70osVrIxF4HVl2n-jFb/pub?output=csv';
 
@@ -113,35 +63,16 @@
       header: true,
       complete: function(results) {
         const data = results.data;
+        console.log("CSV data loaded:", data);
+
         const deckGroups = {};
-
         data.forEach(match => {
-          const encoded = match.deck_hash;
-          const raw = match.timestamp;
-          const result = match.result?.toLowerCase();
-
-          if (!encoded || !raw || !result || (result !== 'win' && result !== 'loss')) return;
-
-          const ts = new Date(
-            raw.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/, '$1-$2-$3T$4:$5:$6')
-          );
-          if (isNaN(ts)) return;
-
-          let decodedIDs = [];
-          try {
-            const decoded = atob(encoded);
-            decodedIDs = decoded.split(',');
-          } catch (e) {
-            console.warn("Failed to decode:", encoded);
-          }
-
-          const cardNames = decodedIDs.map(id => CARD_MAP[id] || `Card${id}`);
-          const deckName =
-            cardNames.slice(0, 4).join(', ') + '\n' + cardNames.slice(4).join(', ');
-          const win = result === 'win' ? 1 : 0;
-
-          if (!deckGroups[deckName]) deckGroups[deckName] = [];
-          deckGroups[deckName].push({ ts, win });
+          const deck = match.deck_hash;
+          const ts = new Date(match.timestamp);
+          const win = match.result?.toLowerCase() === 'win' ? 1 : 0;
+          if (!deck || isNaN(ts)) return;
+          if (!deckGroups[deck]) deckGroups[deck] = [];
+          deckGroups[deck].push({ ts, win });
         });
 
         if (Object.keys(deckGroups).length === 0) {
@@ -154,28 +85,39 @@
           datasets: []
         };
 
-        Object.keys(deckGroups).forEach((deckName, i) => {
-          const matches = deckGroups[deckName].sort((a, b) => a.ts - b.ts);
+        const legendBox = document.getElementById('legend-box');
+
+        Object.keys(deckGroups).forEach((deck, i) => {
+          const matches = deckGroups[deck].sort((a, b) => a.ts - b.ts);
           let wins = 0;
           const points = matches.map((m, idx) => {
             wins += m.win;
-            return ((wins / (idx + 1)) * 100).toFixed(2);
+            return ((wins / (idx + 1)) * 100).toFixed(2); // percentage
           });
 
+          const decoded = atob(deck);
+          const ids = decoded.split(',');
+          const deckNames = ids.map(id => CARD_MAP[id.trim()] || `Card${id.trim()}`);
+
+          const label = deckNames.join(', ');
           chartData.datasets.push({
-            label: deckName,
+            label: label,
             data: points,
             fill: false,
             borderColor: `hsl(${i * 60 % 360}, 70%, 50%)`,
-            tension: 0.3
+            tension: 0.3,
+            pointRadius: 4,
+            pointHoverRadius: 6
           });
 
           if (chartData.labels.length < matches.length) {
-            chartData.labels = matches.map(m => {
-              const d = new Date(m.ts);
-              return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(-2)}`;
-            });
+            chartData.labels = matches.map(m => m.ts.toLocaleString());
           }
+
+          // Add legend manually below title
+          const swatch = `<span style="display:inline-block;width:20px;height:10px;background-color:hsl(${i * 60 % 360}, 70%, 50%);margin-right:8px;border:2px solid black;"></span>`;
+          const line = `<div>${swatch}${label}</div>`;
+          legendBox.innerHTML += line;
         });
 
         const ctx = document.getElementById('winrateChart').getContext('2d');
@@ -185,14 +127,7 @@
           options: {
             responsive: true,
             plugins: {
-              legend: { display: true },
-              tooltip: {
-                callbacks: {
-                  title: (items) => chartData.labels[items[0].dataIndex],
-                  label: (context) => context.dataset.label,
-                  afterLabel: (context) => `Winrate: ${context.formattedValue}%`
-                }
-              }
+              legend: { display: false }
             },
             scales: {
               y: {
@@ -201,7 +136,7 @@
                 title: { display: true, text: 'Win Rate (%)' }
               },
               x: {
-                title: { display: true, text: 'Date' }
+                title: { display: true, text: 'Time (by match)' }
               }
             }
           }
